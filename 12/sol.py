@@ -1,45 +1,53 @@
-def print_grid(grid):
-    for row in grid:
-        for num in row:
-            print('%2d ' % num, end='')
-        print()
+from collections import deque
 
-def traverse_graph(grid, start_loc, end_loc):
-    scores = [[1_000_000_000 for _ in r] for r in grid]
-    scores[start_loc[0]][start_loc[1]] = 0
-    visited = set()
-    queue = [start_loc]
+def calc_neighbors(grid):
+    neighbors = {}
+    row_count = len(grid)
+    col_count = len(grid[0])
     
-    directions = [
-        [1, 0],
-        [-1, 0],
-        [0, 1],
-        [0, -1]
-    ]
+    for row_idx, row in enumerate(grid):
+        for col_idx, _ in enumerate(row):
+            directions = [
+                [1, 0],
+                [-1, 0],
+                [0, 1],
+                [0, -1]
+            ]
+            neighbors[(row_idx, col_idx)] = []
 
-    while len(queue) > 0:
-        curr_loc = queue.pop(0)
-        visited.add(str(curr_loc))
+            for d in directions:
+                new_row = row_idx + d[0]
+                new_col = col_idx + d[1]
+                # I hate whitespace formatted conditionals
+                # If we are in bounds and If neighbor is at most 1 above
+                if 0 <= new_row < row_count and 0 <= new_col < col_count and grid[row_idx][col_idx] >= grid[new_row][new_col] - 1:
+                    neighbors[(row_idx, col_idx)].append((new_row, new_col))
+    return neighbors  
 
-        for d in directions:
-            new_row = curr_loc[0] + d[0]
-            new_col = curr_loc[1] + d[1]
-            # I hate whitespace formatted conditionals
-            # If we are in bounds
-            if 0 <= new_row < len(grid) and 0 <= new_col < len(grid[0]):
-                # If neighbor is at most 1 above
-                if grid[curr_loc[0]][curr_loc[1]] + 1 >= grid[new_row][new_col]:
-                    if [new_row, new_col] == end_loc:
-                        scores[new_row][new_col] = scores[curr_loc[0]][curr_loc[1]] + 1
-                    # If haven't visited this node yet
-                    elif str([new_row, new_col]) not in visited:
-                        queue.append([new_row, new_col])
-                        old = scores[new_row][new_col]
-                        new = scores[curr_loc[0]][curr_loc[1]] + 1
-                        if new < old:
-                            scores[new_row][new_col] = new
+def traverse_graph(grid, neighbors, start_loc, end_loc):
+    scores = []
 
-    return scores[end_loc[0]][end_loc[1]]
+    visited = set()
+    queue = deque([(start_loc, 0)])
+    
+    while queue:
+        (c, cs) = queue.popleft()
+        if c in visited:
+            continue
+
+        visited.add(c)
+
+        if c == end_loc:
+            scores.append(cs)
+
+        for n in neighbors[c]:
+            # If haven't visited this node yet, visit it
+            queue.append((n, cs + 1))
+
+    if len(scores) == 0:
+        return 1_000_000_000
+
+    return min(scores)
 
 
 with open('input.txt') as f:
@@ -52,13 +60,43 @@ with open('input.txt') as f:
             num = None
             if ch == 'E':
                 num = ord('z')
-                end_loc = [row_idx, col_idx]
+                end_loc = (row_idx, col_idx)
             elif ch == 'S':
-                start_loc = [row_idx, col_idx]
+                start_loc = (row_idx, col_idx)
                 num = ord('a')
             else:
                 num = ord(ch)
             num -= ord('a')
             grid[row_idx].append(num)
-                
-    print(traverse_graph(grid, start_loc, end_loc))
+    
+    neighbors = calc_neighbors(grid)
+    print(traverse_graph(grid, neighbors, start_loc, end_loc))
+
+
+
+with open('input.txt') as f:
+    grid = []
+    start_locs = []
+    end_loc = []
+    for row_idx, row in enumerate(f.readlines()):
+        grid.append([])
+        for col_idx, ch in enumerate(row.strip()):
+            num = None
+            if ch == 'E':
+                num = ord('z')
+                end_loc = (row_idx, col_idx)
+            elif ch == 'S':
+                start_locs.append((row_idx, col_idx))
+                num = ord('a')
+            else:
+                if ch == 'a':
+                    start_locs.append((row_idx, col_idx))
+                num = ord(ch)
+            num -= ord('a')
+            grid[row_idx].append(num)
+    
+    neighbors = calc_neighbors(grid)
+    scores = []
+    for start_loc in start_locs:
+        scores.append(traverse_graph(grid, neighbors, start_loc, end_loc))
+    print(min(scores))
