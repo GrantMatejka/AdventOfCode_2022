@@ -1,19 +1,22 @@
 def print_grid(grid):
     for i, row in enumerate(grid):
-        print(i, " " , end='')
+        print(i, " ", end="")
         for x in row:
-            print(x, end='')
+            print(x, end="")
         print()
+
 
 def build_grid1(paths):
     minX = min(sum([[point[0] for point in path] for path in paths], []))
     maxX = max(sum([[point[0] for point in path] for path in paths], [])) - minX + 1
     maxY = max(sum([[point[1] for point in path] for path in paths], [])) + 1
-    normalized_paths = [[[point[1], point[0] - minX] for point in path] for path in paths]
+    normalized_paths = [
+        [[point[1], point[0] - minX] for point in path] for path in paths
+    ]
     sand_src = [0, 500 - minX]
 
-    grid = [['.' for _ in range(maxX)] for _ in range(maxY)]
-    
+    grid = [["." for _ in range(maxX)] for _ in range(maxY)]
+
     for path in normalized_paths:
         starting_point = path[0]
         for idx in range(1, len(path)):
@@ -23,7 +26,7 @@ def build_grid1(paths):
             deltaCol = next_point[1] - starting_point[1]
 
             while not starting_point == next_point:
-                grid[starting_point[0]][starting_point[1]] = '#'
+                grid[starting_point[0]][starting_point[1]] = "#"
 
                 if not starting_point[0] == next_point[0]:
                     dir = int(deltaRow / abs(deltaRow))
@@ -33,26 +36,31 @@ def build_grid1(paths):
                     dir = int(deltaCol / abs(deltaCol))
                     starting_point[1] += dir
 
-            grid[starting_point[0]][starting_point[1]] = '#'
+            grid[starting_point[0]][starting_point[1]] = "#"
             starting_point = path[idx]
 
     return (grid, sand_src)
 
+
 def fall_dir(grid, sp):
-    newRow = sp[0] + 1
-    if newRow >= len(grid) or sp[1] - 1 < 0 or sp[1] + 1 >= len(grid[0]):
-        return 'OOB'
-    if grid[newRow][sp[1]] == '.':
-        return 'D'
-    elif grid[newRow][sp[1] - 1] == '.':
+    new_row = sp[0] + 1
+    if new_row >= len(grid) or sp[1] - 1 < 0 or sp[1] + 1 >= len(grid[0]):
+        return "OOB"
+    if grid[new_row][sp[1]] == ".":
+        return "D"
+    elif grid[new_row][sp[1] - 1] == ".":
         return "DL"
-    elif grid[newRow][sp[1] + 1] == '.':
+    elif grid[new_row][sp[1] + 1] == ".":
         return "DR"
     else:
         return False
 
+
 with open("input.txt") as f:
-    paths = [[[int(n) for n in p.strip().split(",")] for p in l.strip().split("->")] for l in f.readlines()]
+    paths = [
+        [[int(n) for n in p.strip().split(",")] for p in l.strip().split("->")]
+        for l in f.readlines()
+    ]
     (grid, sand_src) = build_grid1(paths)
 
     sand = 0
@@ -63,26 +71,25 @@ with open("input.txt") as f:
         sp = sand_src.copy()
         fall = fall_dir(grid, sand_src)
         while not fall == False:
-            if fall == 'OOB':
+            if fall == "OOB":
                 print(sand - 1)
                 x = False
                 break
 
             # change grid back to air
-            grid[sp[0]][sp[1]] = '.'
-            
+            grid[sp[0]][sp[1]] = "."
+
             sp[0] += 1
 
-            # Don't need to check 
-            if fall == 'DL':
+            # Don't need to check
+            if fall == "DL":
                 sp[1] -= 1
-            elif fall == 'DR':
+            elif fall == "DR":
                 sp[1] += 1
 
-            grid[sp[0]][sp[1]] = 'O'
-            
-            fall = fall_dir(grid, sp)
+            grid[sp[0]][sp[1]] = "O"
 
+            fall = fall_dir(grid, sp)
 
 
 def build_grid2(paths):
@@ -115,58 +122,59 @@ def build_grid2(paths):
 
     return (blockers, maxY)
 
+
 def fall_dir2(blockers, floor, sp):
-    newRow = sp[0] + 1
-    d_blocked = (newRow, sp[1]) in blockers
-    dl_blocked = (newRow, sp[1] - 1) in blockers
-    dr_blocked = (newRow, sp[1] + 1) in blockers
+    new_row = sp[0] + 1
+    d_blocked = (new_row, sp[1]) in blockers
+    dl_blocked = (new_row, sp[1] - 1) in blockers
+    dr_blocked = (new_row, sp[1] + 1) in blockers
 
     # can't fall below floor limit
-    if newRow >= floor:
+    if new_row >= floor:
         return False
 
     if not d_blocked:
-        return 'D'
-    elif not dl_blocked:
+        return "D"
+    if not dl_blocked:
         return "DL"
-    elif not dr_blocked:
+    if not dr_blocked:
         return "DR"
-    else:
-        return False
+    return False
 
-# TODO: Finish
-with open("test_input.txt") as f:
+
+with open("input.txt") as f:
     # Represent the grid as a list of points for blockers
-    # then iterate by dropping sand and checking list of blockers 
-    paths = [[[int(n) for n in p.strip().split(",")] for p in l.strip().split("->")] for l in f.readlines()]
+    # then iterate by dropping sand and checking list of blockers
+    paths = [
+        [[int(n) for n in p.strip().split(",")] for p in l.strip().split("->")]
+        for l in f.readlines()
+    ]
     (blockers, floorY) = build_grid2(paths)
 
-    print(blockers)
-    print(floorY)
-
     sand = 0
-    x = True
-    while x:
+    sand_src = (0, 500)
+    while True:
         # Drop sand
         sand += 1
-        sp = (0, 500)
-        blockers.add(sp)
+        sp = sand_src
         fall = fall_dir2(blockers, floorY, sand_src)
-        while not fall == False:
-            print(sand, sp, fall, len(blockers), blockers)
+        blockers.add(sp)
+
+        while not fall is False:
+            blockers.remove(sp)
 
             sp = (sp[0] + 1, sp[1])
 
-            # Don't need to check 
-            if fall == 'DL':
-                sp = (sp[0] + 1, sp[1] - 1)
-            elif fall == 'DR':
-                sp = (sp[0] + 1, sp[1] + 1)
+            # Don't need to check
+            if fall == "DL":
+                sp = (sp[0], sp[1] - 1)
+            elif fall == "DR":
+                sp = (sp[0], sp[1] + 1)
 
-            blockers.add(sp)
-
-            
             fall = fall_dir2(blockers, floorY, sp)
+            blockers.add(sp)
 
         if sp == sand_src:
             break
+
+    print(sand)
